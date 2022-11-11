@@ -7,14 +7,6 @@ from api.permissions import IsAuthorOrReadOnly
 from posts.models import Group, Post, User
 
 
-class ListRetrieveViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet
-):
-    pass
-
-
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = serializers.PostSerializer
@@ -25,10 +17,13 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class GroupViewSet(ListRetrieveViewSet):
+class GroupViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
     queryset = Group.objects.all()
     serializer_class = serializers.GroupSerializer
-    # pagination_class = LimitOffsetPagination
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
@@ -45,11 +40,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
+):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = serializers.FollowSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ['=user__username', '=following__username']
+    search_fields = ('=user__username', '=following__username')
 
     def get_queryset(self):
         return self.request.user.follower.all()
